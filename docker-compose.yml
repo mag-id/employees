@@ -1,0 +1,28 @@
+services:
+
+  db:
+    image: mongo:5.0.12
+    env_file:
+      - .env
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${DB_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${DB_PASSWORD}
+    hostname: ${DB_HOST}
+    ports:
+      - ${DB_PORT}:${DB_PORT}
+
+  app:
+    depends_on:
+      - db
+    build: .
+    env_file:
+      - .env
+    hostname: ${APP_HOST}
+    ports:
+      - ${APP_PORT}:${APP_PORT}
+    volumes:
+      - ./migrations:/migrations
+    command: bash -c
+      "python /migrations/migrate.py /migrations/insert-db-employees-${MIGRATION}.json
+      && 
+      uvicorn app.main:APP --host ${APP_HOST} --port ${APP_PORT}"
