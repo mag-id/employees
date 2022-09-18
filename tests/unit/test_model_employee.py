@@ -1,6 +1,8 @@
 from datetime import datetime, timedelta, timezone
+
 from pydantic.error_wrappers import ValidationError
 from pytest import mark, param, raises
+
 from app.models import Employee
 
 VALIDATION_ERROR_MESSAGE_GREATER = "ensure this value is greater than or equal to [0-9]+"
@@ -69,6 +71,11 @@ def test_salary_exception(salary: int, exception_pattern: str):
         Employee(salary=salary)
 
 
+def test_join_date_none():
+    assert Employee().join_date is None
+    assert Employee(join_date=None).join_date is None
+
+
 @mark.parametrize(
     ["raw", "processed"],
     [
@@ -111,6 +118,8 @@ def test_join_date_conversion(raw: str | datetime, processed: str):
 @mark.parametrize(
     "raw",
     [
+        param("", id="empty string"),
+        param(" ", id="space string"),
         param("no date str", id="not datetime string"),
         param("2000-01-01", id="datetime string in an unrecognized format"),
     ]

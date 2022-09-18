@@ -7,6 +7,7 @@ TODO: Fields can be improved, Figure out exact requirements.
 """
 from datetime import datetime
 from typing import Optional
+
 from pydantic import BaseModel, Field, validator
 
 TEXT_FIELD = Field(None, max_length=60)
@@ -23,5 +24,6 @@ class Employee(BaseModel):
     salary: Optional[int] = Field(None, ge=0, le=100_000)
 
     @validator("join_date")
-    def get_datetime_in_isoformat(cls, join_date: datetime) -> str:
-        return join_date.isoformat(sep="T")
+    def get_datetime_in_isoformat(cls, join_date: datetime) -> str | None:
+        if join_date is not None:
+            return join_date.isoformat(sep="T")
