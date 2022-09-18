@@ -12,7 +12,6 @@ from conftest import ALEX_SMITH_FOO, ALEX_SMITH_BAR, SAM_JONES_BAR
 CLIENT = TestClient(APP)
 
 
-@mark.asyncio
 @mark.parametrize(
     ["route", "status", "body"],
     [
@@ -49,7 +48,7 @@ CLIENT = TestClient(APP)
         ),
     ]
 )
-async def test_get_employees(route: str, status: HTTPStatus, body: dict | list[dict]):
+def test_get_employees(route: str, status: HTTPStatus, body: dict | list[dict]):
     response = CLIENT.get(route)
     assert response.status_code == status
     assert response.json() == body
