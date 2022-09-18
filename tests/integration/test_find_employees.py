@@ -92,7 +92,6 @@ def test_find_by_name_and_age():
 
 @mark.parametrize("model", MODELS)
 def test_find_by_filled_models(model: Employee):
-    # TODO: Test, failed. Fix join_date processing
     assert find_employees(model) == [model]
 
 

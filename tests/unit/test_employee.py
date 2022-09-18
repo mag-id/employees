@@ -22,7 +22,6 @@ def test_initialization():
 
 
 def test_text_field_max_length_acceptable():
-    # See: https://en.wikipedia.org/wiki/Hubert_Blaine_Wolfeschlegelsteinhausenbergerdorff_Sr.
     long_name = "".join("G" for _ in range(60))
     assert Employee(name=long_name)
 
@@ -71,14 +70,51 @@ def test_salary_exception(salary: int, exception_pattern: str):
 
 
 @mark.parametrize(
-    ["raw_string", "datatime_object"],
+    ["raw", "processed"],
     [
-        param("2000-01-01T01:01:01", datetime(2000, 1, 1, 1, 1, 1)),
-        param("2000-01-01 01:01:01", datetime(2000, 1, 1, 1, 1, 1)),
-
-        param("2000-01-01T00:00:00-07:00", datetime(2000, 1, 1, tzinfo=timezone(timedelta(hours=-7)))),
-        param("2000-01-01 00:00:00-08:00", datetime(2000, 1, 1, tzinfo=timezone(timedelta(hours=-8)))),
+        param(
+            "2000-01-01T00:00:00-08:00",
+            "2000-01-01T00:00:00-08:00",
+            id="datetime string full",
+        ),
+        param(
+            "2000-01-01T01:01:01",
+            "2000-01-01T01:01:01",
+            id="datetime string without timezone",
+        ),
+        param(
+            "2000-01-01 01:01:01-08:00",
+            "2000-01-01T01:01:01-08:00",
+            id="datetime string without separator",
+        ),
+        param(
+            datetime(2000, 1, 1, tzinfo=timezone(timedelta(hours=-8))),
+            "2000-01-01T00:00:00-08:00",
+            id="datetime object full",
+        ),
+        param(
+            datetime(2000, 1, 1, 1, 1, 1),
+            "2000-01-01T01:01:01",
+            id="datetime object without timezone",
+        ),
+        param(
+            datetime(2000, 1, 1),
+            "2000-01-01T00:00:00",
+            id="datetime object without specified time",
+        ),
     ]
 )
-def test_join_date_conversion(raw_string: str, datatime_object: datetime):
-    assert Employee(join_date=raw_string).join_date == datatime_object
+def test_join_date_conversion(raw: str | datetime, processed: str):
+    assert Employee(join_date=raw).join_date == processed
+
+
+@mark.parametrize(
+    "raw",
+    [
+        param("no date str", id="not datetime string"),
+        param("2000-01-01", id="datetime string in an unrecognized format"),
+    ]
+)
+def test_join_date_wrong_formats(raw: str | datetime):
+    with raises(ValidationError, match="invalid datetime format"):
+        Employee(join_date=raw)
