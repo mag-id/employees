@@ -78,8 +78,7 @@ def test_find_by_age():
 
 
 def test_find_by_join_date():
-    employee = Employee(age=MODEL_ALEX_SMITH_FOO.join_date)
-    # TODO: Test, failed. Fix join_date processing
+    employee = Employee(join_date=MODEL_ALEX_SMITH_FOO.join_date)
     assert find_employees(employee) == [MODEL_ALEX_SMITH_FOO]
 
 
