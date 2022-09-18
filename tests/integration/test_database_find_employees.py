@@ -1,99 +1,50 @@
-from pytest import fixture, mark
-from app.database import connect_to_employees, find_employees
+"""
+TODO:
+    * Keep in mind that the `find_employees` returns' order is not guaranteed. Let's refactor tests according to it.
+    * Usage of `Employee` makes tests more coupled. Try to add mocks.
+"""
+from pytest import mark, param
+
+from app.database import find_employees
 from app.models import Employee
+from conftest import ALEX_SMITH_FOO, ALEX_SMITH_BAR, SAM_JONES_BAR
 
-RECORD_ALEX_SMITH_FOO = {
-    "name": "Alex Smith",
-    "email": "Alex.Smith@foo.com",
-    "age": 30,
-    "company": "Foo Inc",
-    "join_date": "2015-12-30T23:59:59-08:00",
-    "job_title": "senior developer",
-    "gender": "female",
-    "salary": 5000
-}
-MODEL_ALEX_SMITH_FOO = Employee.parse_obj(RECORD_ALEX_SMITH_FOO)
-
-RECORD_ALEX_SMITH_BAR = {
-    "name": "Alex Smith",
-    "email": "Alex.Smith@bar.com",
-    "age": 25,
-    "company": "Bar Inc",
-    "join_date": "2022-12-30T23:59:59-07:00",
-    "job_title": "junior developer",
-    "gender": "male",
-    "salary": 1000
-}
-MODEL_ALEX_SMITH_BAR = Employee.parse_obj(RECORD_ALEX_SMITH_BAR)
-
-RECORD_SAM_JONES_BAR = {
-    "name": "Sam Jones",
-    "email": "Sam.Jones@bar.com",
-    "age": 30,
-    "company": "Bar Inc",
-    "join_date": "2020-12-30T23:59:59-07:00",
-    "job_title": "middle developer",
-    "gender": "male",
-    "salary": 3000
-}
-MODEL_SAM_JONES_BAR = Employee.parse_obj(RECORD_SAM_JONES_BAR)
-
-RECORDS = [RECORD_ALEX_SMITH_FOO, RECORD_ALEX_SMITH_BAR, RECORD_SAM_JONES_BAR]
-MODELS = [MODEL_ALEX_SMITH_FOO, MODEL_ALEX_SMITH_BAR, MODEL_SAM_JONES_BAR]
+ALEX_SMITH_FOO = Employee.parse_obj(ALEX_SMITH_FOO)
+ALEX_SMITH_BAR = Employee.parse_obj(ALEX_SMITH_BAR)
+SAM_JONES_BAR = Employee.parse_obj(SAM_JONES_BAR)
 
 
-@fixture(autouse=True)
-def mock_env_vars(monkeypatch):
-    monkeypatch.setenv("DB_HOST", "localhost")
-    monkeypatch.setenv("DB_PORT", "27017")
-    monkeypatch.setenv("DB_USERNAME", "username")
-    monkeypatch.setenv("DB_PASSWORD", "password")
-    yield
-    monkeypatch.delenv("DB_HOST")
-    monkeypatch.delenv("DB_PORT")
-    monkeypatch.delenv("DB_USERNAME")
-    monkeypatch.delenv("DB_PASSWORD")
-
-
-@fixture(autouse=True)
-def prepare_records():
-    employees = connect_to_employees()
-    employees.insert_many(RECORDS)
-    yield
-    employees.delete_many({})
-
-
-def test_no_founded():
-    assert find_employees(Employee(name="")) == []
-
-
-def test_find_by_name():
-    employee = Employee(name=MODEL_ALEX_SMITH_FOO.name)
-    assert find_employees(employee) == [MODEL_ALEX_SMITH_FOO, MODEL_ALEX_SMITH_BAR]
-
-
-def test_find_by_age():
-    employee = Employee(age=MODEL_ALEX_SMITH_FOO.age)
-    assert find_employees(employee) == [MODEL_ALEX_SMITH_FOO, MODEL_SAM_JONES_BAR]
-
-
-def test_find_by_join_date():
-    employee = Employee(join_date=MODEL_ALEX_SMITH_FOO.join_date)
-    assert find_employees(employee) == [MODEL_ALEX_SMITH_FOO]
-
-
-def test_find_by_name_and_age():
-    employee = Employee(
-        name=MODEL_ALEX_SMITH_BAR.name,
-        age=MODEL_SAM_JONES_BAR.age,
-    )
-    assert find_employees(employee) == [MODEL_ALEX_SMITH_FOO]
-
-
-@mark.parametrize("model", MODELS)
-def test_find_by_filled_models(model: Employee):
-    assert find_employees(model) == [model]
-
-
-def test_find_all():
-    assert find_employees(Employee()) == MODELS
+@mark.parametrize(
+    ["query", "response"],
+    [
+        param(Employee(name=""), [], id="not founded"),
+        param(
+            Employee(),
+            [ALEX_SMITH_FOO, ALEX_SMITH_BAR, SAM_JONES_BAR],
+            id="find all",
+        ),
+        param(
+            Employee(name=ALEX_SMITH_FOO.name),
+            [ALEX_SMITH_FOO, ALEX_SMITH_BAR],
+            id="find by name",
+        ),
+        param(
+            Employee(age=ALEX_SMITH_FOO.age),
+            [ALEX_SMITH_FOO, SAM_JONES_BAR],
+            id="find by age",
+        ),
+        param(
+            Employee(join_date=ALEX_SMITH_FOO.join_date),
+            [ALEX_SMITH_FOO],
+            id="find by join_name",
+        ),
+        param(
+            Employee(name=ALEX_SMITH_BAR.name, age=SAM_JONES_BAR.age),
+            [ALEX_SMITH_FOO],
+            id="find by name and age",
+        ),
+        param(SAM_JONES_BAR, [SAM_JONES_BAR], id="find by filled model"),
+    ]
+)
+def test_find_employees_unique(query: Employee, response: list[Employee]):
+    assert find_employees(query) == response
