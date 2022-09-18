@@ -1,4 +1,4 @@
-from pytest import fixture, mark, param
+from pytest import fixture, mark
 from app.database import connect_to_employees, find_employees
 from app.models import Employee
 
