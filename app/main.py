@@ -6,5 +6,5 @@ APP = FastAPI()
 
 
 @APP.get("/employees", response_model=list[Employee])
-async def employees(query: Employee = Depends()) -> list[Employee]:
+async def get_employees(query: Employee = Depends()) -> list[Employee]:
     return find_employees(query)
